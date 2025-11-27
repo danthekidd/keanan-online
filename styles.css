@@ -8,8 +8,6 @@ body {
     font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
     font-size: 16px;
     line-height: 1.6;
-	background-color: var(--bg-color);
-    color: var(--text-color);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
