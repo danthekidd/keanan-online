@@ -15,7 +15,7 @@ async function runFFmpeg() {
 
 const argList = document.getElementById("arg-list");
 const addArg = document.getElementById("add-arg");
-const run = document.getElementById("run");
+const runBtn = document.getElementById("run");
 
 function addArgument() {
 	const row = document.createElement("div");
@@ -81,4 +81,4 @@ async function run() {
 }
 
 addArg.addEventListener("click", addArgument);
-run.addEventListener("click", run);
+runBtn.addEventListener("click", run);
