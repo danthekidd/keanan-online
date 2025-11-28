@@ -94,15 +94,14 @@ select {
     cursor: pointer;
     font-size: 12px;
     font-weight: 500;
-    transition: background-color 0.15s ease, transform 0.08s ease, box-shadow 0.15s ease, border-color 0.15s ease;
-    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+    transition: background-color 0.15s ease, transform 0.08s ease;
+    box-shadow: none;
 }
 
 button:hover,
 .button:hover,
 select:hover {
     background-color: var(--accent-color-hover);
-    border-color: var(--accent-color-hover);
     transform: translateY(-1px);
 }
 
@@ -110,14 +109,12 @@ button:active,
 .button:active,
 select:active {
     transform: translateY(0);
-    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.6);
 }
 
 button:disabled,
 .button:disabled {
     opacity: 0.6;
     cursor: not-allowed;
-    box-shadow: none;
 }
 
 select {
