@@ -1,3 +1,5 @@
+const MP3_BIT_RATE = 320;
+
 const fileInput = document.getElementById("file");
 const convertBtn = document.getElementById("convert");
 
@@ -6,6 +8,60 @@ let selectedFile = null;
 fileInput.addEventListener("change", (event) => {
     selectedFile = event.target.files[0] || null;
 });
+
+function triggerDownload(blob, fileName) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+}
+
+function encodeMp3(samples, sampleRate, numChannels) {
+    const encoder = new lamejs.Mp3Encoder(numChannels, sampleRate, kbps);
+    const blockSize = 1152;
+    const mp3Data = [];
+    
+    if (numChannels === 1) {
+        for (let i = 0; i < samples.length; i += blockSize) {
+            const chunk = samples.subarray(i, i + blockSize);
+            const mp3buf = encoder.encodeBuffer(chunk);
+            if (mp3buf.length > 0) {
+                mp3Data.push(mp3buf);
+            }
+        }
+    } else if (numChannels === 2) {
+        const frameCount = samples.length / 2;
+        const left = new Int16Array(frameCount);
+        const right = new Int16Array(frameCount);
+
+        for (let i = 0, j = 0; i < samples.length; i += 2, j++) {
+            left[j] = samples[i];
+            right[j] = samples[i + 1];
+        }
+
+        for (let i = 0; i < frameCount; i += blockSize) {
+            const leftChunk = left.subarray(i, i + blockSize);
+            const rightChunk = right.subarray(i, i + blockSize);
+            const mp3buf = encoder.encodeBuffer(leftChunk, rightChunk);
+            if (mp3buf.length > 0) {
+                mp3Data.push(mp3buf);
+            }
+        }
+    } else {
+        throw new Error("Only mono or stereo WAV is supported.");
+    }
+    const flush = encoder.flush();
+    if (flush.length > 0) {
+        mp3Data.push(flush);
+    }
+
+    return new Blob(mp3Data, { type: "audio/mpeg" });
+}
+    
 
 function parseWav(arrayBuffer) {
     const dataView = new DataView(arrayBuffer);
@@ -94,6 +150,12 @@ async function convert() {
         const arrayBuffer = await selectedFile.arrayBuffer();
         const wavData = parseWav(arrayBuffer);
         console.log("Parsed WAV data:", wavData);
+        const mp3Blob = encodeMp3(wavData.samples, wavData.sampleRate, wavData.channels);
+
+        const baseName = selectedFile.name.replace(/\.[^.]+$/i, "");
+        const fileName = baseName + ".mp3";
+        
+        triggerDownload(mp3Blob, fileName);
     } catch (err) {
         console.error("Conversion error:", err);
         alert(err.message || String(err));
