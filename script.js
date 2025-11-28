@@ -1,6 +1,7 @@
-const MP3_BIT_RATE = 320;
+
 
 const fileInput = document.getElementById("file");
+const bitrateInput = document.getElementById("bitrate");
 const convertBtn = document.getElementById("convert");
 
 let selectedFile = null;
@@ -21,7 +22,8 @@ function triggerDownload(blob, fileName) {
 }
 
 function encodeMp3(samples, sampleRate, numChannels) {
-    const encoder = new lamejs.Mp3Encoder(numChannels, sampleRate, MP3_BIT_RATE);
+    const bitrate = bitrateInput.value;
+    const encoder = new lamejs.Mp3Encoder(numChannels, sampleRate, bitrate);
     const blockSize = 1152;
     const mp3Data = [];
     
