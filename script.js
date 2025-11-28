@@ -109,6 +109,21 @@ function parseWav(arrayBuffer) {
             numChannels = readUint16(chunkDataOffset + 2);
             sampleRate = readUint32(chunkDataOffset + 4);
             bitsPerSample = readUint16(chunkDataOffset + 14);
+
+            if (audioFormat === 65534) {
+                const cbSize = readUint16(chunkDataOffset + 16);
+                if (cbSize < 22) {
+                    throw new Error("Invalid WAVE_FORMAT_EXTENSIBLE fmt chunk.");
+                }
+                const subFormat = readUint32(chunkDataOffset + 24);
+                if (subFormat === 0x00000001) {
+                    audioFormat = 1;
+                } else if (subFormat === 0x00000003) {
+                    audioFormat = 3;
+                } else {
+                    throw new Error("Unsupported WAVE_FORMAT_EXTENSIBLE subformat: 0x" + subFormat.toString(16));
+                }
+            }
         } else if (chunkId === "data") {
             dataOffset = chunkDataOffset;
             dataSize = chunkSize;
@@ -125,11 +140,9 @@ function parseWav(arrayBuffer) {
     if (numChannels == null || sampleRate == null || bitsPerSample == null || audioFormat == null) {
         throw new Error("Invalid or missing fmt chunk in WAV.");
     }
-    
-    console.log(audioFormat);
 
     if (audioFormat !== 1 && audioFormat !== 3 && audioFormat !== 6 && audioFormat !== 7) {
-        throw new Error("Unsupported WAV format. Supported: PCM (1), IEEE float (3), A-law (6), μ-law (7).");
+        throw new Error("Unsupported WAV format tag: " + audioFormat);
     }
 
     let samples;
