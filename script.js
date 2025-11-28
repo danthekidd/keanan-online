@@ -125,6 +125,8 @@ function parseWav(arrayBuffer) {
     if (numChannels == null || sampleRate == null || bitsPerSample == null || audioFormat == null) {
         throw new Error("Invalid or missing fmt chunk in WAV.");
     }
+    
+    console.log(audioFormat);
 
     if (audioFormat !== 1 && audioFormat !== 3 && audioFormat !== 6 && audioFormat !== 7) {
         throw new Error("Unsupported WAV format. Supported: PCM (1), IEEE float (3), A-law (6), μ-law (7).");
