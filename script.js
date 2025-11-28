@@ -1,5 +1,3 @@
-
-
 const fileInput = document.getElementById("file");
 const bitrateInput = document.getElementById("bitrate");
 const convertBtn = document.getElementById("convert");
@@ -56,6 +54,7 @@ function encodeMp3(samples, sampleRate, numChannels) {
     } else {
         throw new Error("Only mono or stereo WAV is supported.");
     }
+
     const flush = encoder.flush();
     if (flush.length > 0) {
         mp3Data.push(flush);
@@ -63,7 +62,6 @@ function encodeMp3(samples, sampleRate, numChannels) {
 
     return new Blob(mp3Data, { type: "audio/mpeg" });
 }
-    
 
 function parseWav(arrayBuffer) {
     const dataView = new DataView(arrayBuffer);
@@ -112,11 +110,11 @@ function parseWav(arrayBuffer) {
             bitsPerSample = readUint16(chunkDataOffset + 14);
 
             if (audioFormat !== 1) {
-                throw new Error("Only PCM WAV is supported.");
+                throw new Error("Only linear PCM WAV is supported.");
             }
 
-            if (bitsPerSample !== 16) {
-                throw new Error("Only 16-bit WAV is supported in this demo.");
+            if (bitsPerSample !== 16 && bitsPerSample !== 24) {
+                throw new Error("Only 16-bit or 24-bit WAV is supported.");
             }
         } else if (chunkId === "data") {
             dataOffset = chunkDataOffset;
@@ -135,7 +133,28 @@ function parseWav(arrayBuffer) {
         throw new Error("Invalid or missing fmt chunk in WAV.");
     }
 
-    const samples = new Int16Array(arrayBuffer, dataOffset, dataSize / 2);
+    const bytesPerSample = bitsPerSample / 8;
+    const totalSamples = dataSize / bytesPerSample;
+    let samples;
+
+    if (bitsPerSample === 16) {
+        samples = new Int16Array(arrayBuffer, dataOffset, totalSamples);
+    } else if (bitsPerSample === 24) {
+        samples = new Int16Array(totalSamples);
+        let sampleIndex = 0;
+        for (let i = 0; i < dataSize; i += 3) {
+            const b0 = dataView.getUint8(dataOffset + i);
+            const b1 = dataView.getUint8(dataOffset + i + 1);
+            const b2 = dataView.getUint8(dataOffset + i + 2);
+            let value = b0 | (b1 << 8) | (b2 << 16);
+            if (value & 0x800000) {
+                value |= 0xff000000;
+            }
+            samples[sampleIndex++] = value >> 8;
+        }
+    } else {
+        throw new Error("Unsupported bits per sample.");
+    }
 
     return {
         samples,
