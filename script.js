@@ -95,6 +95,7 @@ function parseWav(arrayBuffer) {
     let numChannels = null;
     let sampleRate = null;
     let bitsPerSample = null;
+    let audioFormat = null;
     let dataOffset = null;
     let dataSize = null;
 
@@ -104,18 +105,10 @@ function parseWav(arrayBuffer) {
         const chunkDataOffset = offset + 8;
 
         if (chunkId === "fmt ") {
-            const audioFormat = readUint16(chunkDataOffset + 0);
+            audioFormat = readUint16(chunkDataOffset + 0);
             numChannels = readUint16(chunkDataOffset + 2);
             sampleRate = readUint32(chunkDataOffset + 4);
             bitsPerSample = readUint16(chunkDataOffset + 14);
-
-            if (audioFormat !== 1) {
-                throw new Error("Only linear PCM WAV is supported.");
-            }
-
-            if (bitsPerSample !== 16 && bitsPerSample !== 24) {
-                throw new Error("Only 16-bit or 24-bit WAV is supported.");
-            }
         } else if (chunkId === "data") {
             dataOffset = chunkDataOffset;
             dataSize = chunkSize;
@@ -129,31 +122,63 @@ function parseWav(arrayBuffer) {
         throw new Error("No data chunk found in WAV.");
     }
 
-    if (numChannels == null || sampleRate == null || bitsPerSample == null) {
+    if (numChannels == null || sampleRate == null || bitsPerSample == null || audioFormat == null) {
         throw new Error("Invalid or missing fmt chunk in WAV.");
     }
 
-    const bytesPerSample = bitsPerSample / 8;
-    const totalSamples = dataSize / bytesPerSample;
+    if (audioFormat !== 1 && audioFormat !== 3 && audioFormat !== 6 && audioFormat !== 7) {
+        throw new Error("Unsupported WAV format. Supported: PCM (1), IEEE float (3), A-law (6), μ-law (7).");
+    }
+
     let samples;
 
-    if (bitsPerSample === 16) {
-        samples = new Int16Array(arrayBuffer, dataOffset, totalSamples);
-    } else if (bitsPerSample === 24) {
-        samples = new Int16Array(totalSamples);
-        let sampleIndex = 0;
-        for (let i = 0; i < dataSize; i += 3) {
-            const b0 = dataView.getUint8(dataOffset + i);
-            const b1 = dataView.getUint8(dataOffset + i + 1);
-            const b2 = dataView.getUint8(dataOffset + i + 2);
-            let value = b0 | (b1 << 8) | (b2 << 16);
-            if (value & 0x800000) {
-                value |= 0xff000000;
+    if (audioFormat === 1) {
+        const bytesPerSample = bitsPerSample / 8;
+        const totalSamples = dataSize / bytesPerSample;
+
+        if (bitsPerSample === 16) {
+            samples = new Int16Array(arrayBuffer, dataOffset, totalSamples);
+        } else if (bitsPerSample === 24) {
+            samples = new Int16Array(totalSamples);
+            let sampleIndex = 0;
+            for (let i = 0; i < dataSize; i += 3) {
+                const b0 = dataView.getUint8(dataOffset + i);
+                const b1 = dataView.getUint8(dataOffset + i + 1);
+                const b2 = dataView.getUint8(dataOffset + i + 2);
+                let value = b0 | (b1 << 8) | (b2 << 16);
+                if (value & 0x800000) {
+                    value |= 0xff000000;
+                }
+                samples[sampleIndex++] = value >> 8;
             }
-            samples[sampleIndex++] = value >> 8;
+        } else {
+            throw new Error("Unsupported PCM bits per sample. Only 16-bit and 24-bit.");
+        }
+    } else if (audioFormat === 3) {
+        if (bitsPerSample !== 32) {
+            throw new Error("Only 32-bit float WAV is supported for IEEE float.");
+        }
+        const floatSamples = new Float32Array(arrayBuffer, dataOffset, dataSize / 4);
+        samples = new Int16Array(floatSamples.length);
+        for (let i = 0; i < floatSamples.length; i++) {
+            let v = floatSamples[i];
+            if (v > 1) v = 1;
+            if (v < -1) v = -1;
+            samples[i] = v < 0 ? v * 0x8000 : v * 0x7fff;
+        }
+    } else if (audioFormat === 6 || audioFormat === 7) {
+        const totalSamples = dataSize;
+        samples = new Int16Array(totalSamples);
+        for (let i = 0; i < totalSamples; i++) {
+            const byte = dataView.getUint8(dataOffset + i);
+            if (audioFormat === 7) {
+                samples[i] = decodeMuLaw(byte);
+            } else {
+                samples[i] = decodeALaw(byte);
+            }
         }
     } else {
-        throw new Error("Unsupported bits per sample.");
+        throw new Error("Unsupported audio format.");
     }
 
     return {
@@ -162,6 +187,34 @@ function parseWav(arrayBuffer) {
         channels: numChannels,
         bitsPerSample
     };
+}
+
+function decodeMuLaw(muByte) {
+    const MULAW_EXP_LUT16 = [0, 132, 396, 924, 1980, 4092, 8316, 16764];
+    let mu = ~muByte & 0xff;
+    const sign = mu & 0x80;
+    const exponent = (mu >> 4) & 0x07;
+    const mantissa = mu & 0x0f;
+    let sample = MULAW_EXP_LUT16[exponent] + (mantissa << (exponent + 3));
+    if (sign) sample = -sample;
+    return sample;
+}
+
+function decodeALaw(aByte) {
+    let a = aByte ^ 0x55;
+    let sign = a & 0x80;
+    let exponent = (a >> 4) & 0x07;
+    let mantissa = a & 0x0f;
+    let sample;
+    if (exponent > 0) {
+        sample = ((mantissa << 4) + 0x100) << (exponent - 1);
+    } else {
+        sample = (mantissa << 4) + 8;
+    }
+    if (!sign) {
+        sample = -sample;
+    }
+    return sample;
 }
 
 async function convert() {
