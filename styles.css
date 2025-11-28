@@ -32,6 +32,10 @@ button, .button {
     font-size: 12px;
 }
 
-select, input[type="file"] {
+select {
     font-size: 12px;
+}
+
+input[type="file"] {
+    display: none;
 }
