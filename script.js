@@ -21,7 +21,7 @@ function triggerDownload(blob, fileName) {
 }
 
 function encodeMp3(samples, sampleRate, numChannels) {
-    const encoder = new lamejs.Mp3Encoder(numChannels, sampleRate, kbps);
+    const encoder = new lamejs.Mp3Encoder(numChannels, sampleRate, MP3_BIT_RATE);
     const blockSize = 1152;
     const mp3Data = [];
     
