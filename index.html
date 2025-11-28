@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<meta charset="UTF-8">
-	    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
 		<title>keanan.online</title>
-	    <link rel="stylesheet" href="styles.css">
+		<link rel="stylesheet" href="styles.css" />
 		<script src="enable-threads.js"></script>
 		<script src="https://unpkg.com/lamejs@1.2.1/lame.min.js"></script>
 	</head>
@@ -14,20 +14,26 @@
 			<h1>keanan.online</h1>
 		</header>
 		<main>
-			<div>
-			<label for="file" class="button">Choose WAV File</label>
-			<input type="file" id="file" accept="audio/wav">
-			</div>
-			<div>
-			<label for="bitrate">Bitrate</label>
-			<select name="bitrate" id="bitrate">
-				<option value="320">320kbps</option>
-				<option value="192">192kbps</option>
-				<option value="128">128kbps</option>
-			</select>
-			</div>
-			<div>
-			<button id="convert">Convert to MP3</button>
+			<div class="form-card">
+				<div class="form-row">
+					<label for="file" class="file-button button"
+						>Choose WAV file</label
+					>
+					<input type="file" id="file" accept="audio/wav" />
+				</div>
+
+				<div class="form-row">
+					<label for="bitrate">Bitrate</label>
+					<select name="bitrate" id="bitrate">
+						<option value="320">320kbps</option>
+						<option value="192">192kbps</option>
+						<option value="128">128kbps</option>
+					</select>
+				</div>
+
+				<div class="form-row">
+					<button id="convert">Convert to MP3</button>
+				</div>
 			</div>
 		</main>
 		<script src="script.js"></script>
