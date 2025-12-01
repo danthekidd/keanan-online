@@ -313,6 +313,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     const fileInput = createElement("input");
     fileInput.type = "file";
     fileInput.id = "file_input";
+    fileInput.accept = ".wav,audio/wav,audio/x-wav";
 
     const bitrateSelectLabel = createElement("label");
     bitrateSelectLabel.htmlFor = "bitrate_select";
