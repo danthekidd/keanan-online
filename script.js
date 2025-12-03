@@ -20,7 +20,7 @@ function createSelectElement(options) {
 
 function isMp3File(file) {
     const name = file.name.toLowerCase();
-    const type = file.type.toLowerCase();
+    const type = (file.type || "").toLowerCase();
     if (name.endsWith(".mp3")) return true;
     if (type === "audio/mpeg" || type === "audio/mp3") return true;
     return false;
@@ -28,7 +28,7 @@ function isMp3File(file) {
 
 function isWavFile(file) {
     const name = file.name.toLowerCase();
-    const type = file.type.toLowerCase();
+    const type = (file.type || "").toLowerCase();
     if (name.endsWith(".wav")) return true;
     if (type === "audio/wav" || type === "audio/x-wav") return true;
     return false;
@@ -401,15 +401,45 @@ function createApicFrame(mimeType, bytes) {
     return frame;
 }
 
+function splitMultiValues(str) {
+    return str
+        .split(";")
+        .map(s => s.trim())
+        .filter(Boolean);
+}
+
 function createId3v23Tag(meta) {
     const frames = [];
 
-    if (meta.title) frames.push(createTextFrame("TIT2", meta.title));
-    if (meta.artist) frames.push(createTextFrame("TPE1", meta.artist));
-    if (meta.album) frames.push(createTextFrame("TALB", meta.album));
-    if (meta.albumArtist) frames.push(createTextFrame("TPE2", meta.albumArtist));
-    if (meta.year) frames.push(createTextFrame("TYER", meta.year));
-    if (meta.coverArt) frames.push(createApicFrame(meta.coverArt.mimeType, meta.coverArt.bytes));
+    if (meta.title) {
+        frames.push(createTextFrame("TIT2", meta.title));
+    }
+
+    if (meta.artist) {
+        const artists = splitMultiValues(meta.artist);
+        for (const a of artists) {
+            frames.push(createTextFrame("TPE1", a));
+        }
+    }
+
+    if (meta.album) {
+        frames.push(createTextFrame("TALB", meta.album));
+    }
+
+    if (meta.albumArtist) {
+        const albumArtists = splitMultiValues(meta.albumArtist);
+        for (const a of albumArtists) {
+            frames.push(createTextFrame("TPE2", a));
+        }
+    }
+
+    if (meta.year) {
+        frames.push(createTextFrame("TYER", meta.year));
+    }
+
+    if (meta.coverArt) {
+        frames.push(createApicFrame(meta.coverArt.mimeType, meta.coverArt.bytes));
+    }
 
     let totalSize = 0;
     for (const f of frames) totalSize += f.length;
@@ -436,6 +466,7 @@ function createId3v23Tag(meta) {
         out.set(f, off);
         off += f.length;
     }
+
     return out;
 }
 
@@ -478,7 +509,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const artistInput = createElement("input");
     artistInput.type = "text";
     artistInput.id = "artist_input";
-    artistInput.placeholder = "Juice WRLD, Lil Uzi Vert";
+    artistInput.placeholder = "Juice WRLD; Lil Uzi Vert";
 
     const albumInputLabel = createElement("label");
     albumInputLabel.htmlFor = "album_input";
@@ -491,7 +522,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const albumArtistInputLabel = createElement("label");
     albumArtistInputLabel.htmlFor = "album_artist_input";
-    albumArtistInputLabel.textContent = "Album Artist";
+    albumArtistInputLabel.textContent = "Album Artist(s)";
 
     const albumArtistInput = createElement("input");
     albumArtistInput.type = "text";
