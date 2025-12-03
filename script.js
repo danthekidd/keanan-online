@@ -485,6 +485,11 @@ document.addEventListener("DOMContentLoaded", () => {
     fileInput.type = "file";
     fileInput.id = "file_input";
     fileInput.accept = ".wav,.mp3,audio/wav,audio/x-wav,audio/mpeg,audio/mp3";
+    
+    fileInput.addEventListener("change", () => {
+        const file = fileInput.files && fileInput.files[0];
+        fileInputLabel.textContent = file ? file.name : "Choose File";
+});
 
     const bitrateSelectLabel = createElement("label");
     bitrateSelectLabel.htmlFor = "bitrate_select";
