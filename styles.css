@@ -38,19 +38,25 @@ html,
 body {
     margin: 0;
     padding: 0;
-    height: 100%;
-    overflow: hidden;
+    min-height: 120vh;
+    overscroll-behavior-y: none;
 }
 
 body {
     font-family: var(--font-sans);
     background: radial-gradient(circle at top, #181927 0, #050509 55%);
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-size: 100% 100%;
+
     color: var(--color-text);
     -webkit-font-smoothing: antialiased;
+
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
+
     padding: 24px;
 }
 
@@ -110,7 +116,15 @@ h1 + p {
     }
 }
 
-/* Labels */
+@media (orientation: landscape) {
+    #file_input_label,
+    #convert_button {
+        grid-column: 1 / -1;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+}
 
 label {
     color: var(--color-text-muted);
@@ -120,12 +134,11 @@ label {
     text-transform: uppercase;
 }
 
-/* Inputs / Selects / Buttons base */
-
 input[type="text"],
 select,
 button,
-#file_input_label {
+#file_input_label,
+#cover_art_label {
     font-family: var(--font-sans);
     font-size: 14px;
     border-radius: var(--radius-sm);
@@ -143,19 +156,18 @@ button,
         color var(--transition-fast);
 }
 
-/* Text input */
 
 input[type="text"]::placeholder {
     color: var(--color-text-soft);
 }
 
-/* File input */
 
 input[type="file"] {
     display: none;
 }
 
-#file_input_label {
+#file_input_label,
+#cover_art_label {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -167,7 +179,6 @@ input[type="file"] {
     font-weight: 500;
 }
 
-/* Select */
 
 select {
     appearance: none;
@@ -184,10 +195,9 @@ select {
     background-repeat: no-repeat;
 }
 
-/* Button */
-
 button,
-#file_input_label {
+#file_input_label,
+#cover_art_label {
     height: var(--button-height);
 }
 
@@ -209,11 +219,10 @@ button#convert_button {
     margin-top: 6px;
 }
 
-/* States: hover / active / focus */
-
 input[type="text"]:hover,
 select:hover,
-#file_input_label:hover {
+#file_input_label:hover,
+#cover_art_label:hover {
     border-color: rgba(255, 255, 255, 0.14);
     background-color: rgba(18, 19, 30, 0.95);
 }
@@ -232,14 +241,13 @@ button:active {
 input[type="text"]:focus-visible,
 select:focus-visible,
 button:focus-visible,
-#file_input_label:focus-visible {
+#file_input_label:focus-visible,
+#cover_art_label:focus-visible {
     border-color: var(--color-accent);
     box-shadow:
         0 0 0 1px rgba(76, 111, 255, 0.4),
         0 0 0 4px rgba(76, 111, 255, 0.14);
 }
-
-/* Small helper text (optional) */
 
 .helper-text {
     margin-top: 4px;
@@ -247,7 +255,6 @@ button:focus-visible,
     color: var(--color-text-soft);
 }
 
-/* Error state (if you ever add) */
 
 .input-error input[type="text"],
 .input-error select {
