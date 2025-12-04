@@ -348,19 +348,25 @@ function utf16WithBomBytes(str) {
     return buf;
 }
 
-function createTextFrame(id, text) {
+function createTextFrame(id, textOrTexts) {
     const encoding = 1;
-    const payload = utf16WithBomBytes(text);
+    const values = Array.isArray(textOrTexts) ? textOrTexts : [textOrTexts];
+    const joined = values.join("\u0000");
+    const payload = utf16WithBomBytes(joined);
     const size = payload.length + 1;
     const frame = new Uint8Array(10 + size);
+
     frame[0] = id.charCodeAt(0);
     frame[1] = id.charCodeAt(1);
     frame[2] = id.charCodeAt(2);
     frame[3] = id.charCodeAt(3);
-    frame[4] = (size >> 24) & 0xFF;
-    frame[5] = (size >> 16) & 0xFF;
-    frame[6] = (size >> 8) & 0xFF;
-    frame[7] = size & 0xFF;
+
+    const ss = encodeSynchsafe32(size);
+    frame[4] = ss[0];
+    frame[5] = ss[1];
+    frame[6] = ss[2];
+    frame[7] = ss[3];
+
     frame[8] = 0;
     frame[9] = 0;
     frame[10] = encoding;
@@ -383,10 +389,13 @@ function createApicFrame(mimeType, bytes) {
     frame[1] = 0x50;
     frame[2] = 0x49;
     frame[3] = 0x43;
-    frame[4] = (size >> 24) & 0xff;
-    frame[5] = (size >> 16) & 0xff;
-    frame[6] = (size >> 8) & 0xff;
-    frame[7] = size & 0xff;
+
+    const ss = encodeSynchsafe32(size);
+    frame[4] = ss[0];
+    frame[5] = ss[1];
+    frame[6] = ss[2];
+    frame[7] = ss[3];
+
     frame[8] = 0;
     frame[9] = 0;
 
@@ -408,7 +417,7 @@ function splitMultiValues(str) {
         .filter(Boolean);
 }
 
-function createId3v23Tag(meta) {
+function createId3v24Tag(meta) {
     const frames = [];
 
     if (meta.title) {
@@ -417,8 +426,8 @@ function createId3v23Tag(meta) {
 
     if (meta.artist) {
         const artists = splitMultiValues(meta.artist);
-        for (const a of artists) {
-            frames.push(createTextFrame("TPE1", a));
+        if (artists.length > 0) {
+            frames.push(createTextFrame("TPE1", artists));
         }
     }
 
@@ -428,13 +437,13 @@ function createId3v23Tag(meta) {
 
     if (meta.albumArtist) {
         const albumArtists = splitMultiValues(meta.albumArtist);
-        for (const a of albumArtists) {
-            frames.push(createTextFrame("TPE2", a));
+        if (albumArtists.length > 0) {
+            frames.push(createTextFrame("TPE2", albumArtists));
         }
     }
 
     if (meta.year) {
-        frames.push(createTextFrame("TYER", meta.year));
+        frames.push(createTextFrame("TDRC", meta.year));
     }
 
     if (meta.coverArt) {
@@ -448,7 +457,7 @@ function createId3v23Tag(meta) {
     header[0] = 0x49;
     header[1] = 0x44;
     header[2] = 0x33;
-    header[3] = 0x03;
+    header[3] = 0x04;
     header[4] = 0x00;
     header[5] = 0x00;
 
@@ -489,7 +498,7 @@ document.addEventListener("DOMContentLoaded", () => {
     fileInput.addEventListener("change", () => {
         const file = fileInput.files && fileInput.files[0];
         fileInputLabel.textContent = file ? file.name : "Choose File";
-});
+    });
 
     const bitrateSelectLabel = createElement("label");
     bitrateSelectLabel.htmlFor = "bitrate_select";
@@ -643,7 +652,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 };
             }
 
-            const id3Tag = createId3v23Tag({
+            const id3Tag = createId3v24Tag({
                 title,
                 artist,
                 album,
